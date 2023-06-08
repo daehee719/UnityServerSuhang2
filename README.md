@@ -1,6 +1,6 @@
 # 유니티 서버 수행
 
-## 1. 커맨드 패턴
+## 1. 커맨드 패턴 & JobQueue
 
 - 커맨드 패턴이란?
   - 하나의 객체를 통해 여러 객체들에 명령(Command)을 해야 할 때 사용되는 패턴
@@ -37,3 +37,44 @@
 - JobQueue 구조
   - JobQueue는 GameRoom에서 Push한 Job을 갖고 있는 데이터 구조이다.
   ![image](https://github.com/daehee719/UnityServerSuhang2/assets/81199906/3ce37d3d-1204-43d6-9f39-af48608dc03d)
+  
+## 2. JobTimer
+
+- JobTimer란?
+  - 일정 시간이 되면 예약하는 시스템
+  - 업데이트를 효율적으로
+
+- JobTimer를 왜 쓰나?
+  - JobSerializer에서 JobQueue를 만들었다. 하지만 만약, 일정 시간 이후에 실행이 되어야 하는 것이라면?
+  - 그냥 무지성 구현하기에는 귀찮고 서버에 부하가 많이 걸릴 것 같다.. 
+  - 그럼 일정 시간 이후에 저절로 JobQueue에 Push하는 기능이 필요할 것이다.
+  - 그것이 JobTimer이다.
+
+![image](https://github.com/daehee719/UnityServerSuhang2/assets/81199906/3d442221-e0ef-42fd-bfe7-603c279840c8)
+
+- JobTimer의 요소를 정의해 놓은 JobTimerElem 구조체이다.
+- 해야하는 일(job)과 일정 시간(execTick)이 정의되어 있다.
+
+![image](https://github.com/daehee719/UnityServerSuhang2/assets/81199906/30cc9660-8410-4dc5-94ea-0640d0728071)
+
+- 0.1초마다 GameRoom의 Update를 실행하여
+![image](https://github.com/daehee719/UnityServerSuhang2/assets/81199906/615e7f1a-104c-43fc-a723-0fd0a7a24886)
+
+
+- Flush함수를 실행한다.
+![image](https://github.com/daehee719/UnityServerSuhang2/assets/81199906/0dae97a2-b960-44ee-b78c-92157fc65430)
+
+- 그러면 JobTimer의 Flush함수가 실행되게 되는데,
+![image](https://github.com/daehee719/UnityServerSuhang2/assets/81199906/4e5c783e-ca5f-4b9e-86f7-a862d7d9ee03)
+
+- JobTimerElem을 요소로 하고 있는 우선순위 큐.
+  - 이러면 JobTimerElem의 execTick이 작은 순대로 큐에 쌓인다.
+
+![image](https://github.com/daehee719/UnityServerSuhang2/assets/81199906/de9859b5-7261-4b45-b513-83f1a7b341d3)
+
+- 그 다음, Flush 함수로 간다. 
+- 우선순위 큐에서 최우선순위 요소를 뽑아서 값(execTick)을 본다.
+- 만약 execTick이 없다면 바로 실행하라는 뜻이므로 바로 실행을 해준다.
+- 만약 execTick이 현재의 TickCount보다 많으면 시간이 지났다는 뜻이므로 바로 실행을 해준다.
+이러면 JobTimer의 기능을 하게 된다.
+
